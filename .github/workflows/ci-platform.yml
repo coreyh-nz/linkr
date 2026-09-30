@@ -1,0 +1,148 @@
+name: CI (platform)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'platform/**'
+      - '.github/actions/setup-platform/**'
+      - '.github/workflows/ci-platform.yml'
+  pull_request:
+    paths:
+      - 'platform/**'
+      - '.github/actions/setup-platform/**'
+      - '.github/workflows/ci-platform.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    working-directory: platform
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-platform
+
+      - name: Run ktlint
+        run: ./gradlew ktlintCheck --no-daemon
+
+  test-unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-platform
+
+      - name: Run unit tests
+        run: ./gradlew testUnit --no-daemon
+
+      - name: Publish unit test report
+        if: ${{ !cancelled() }}
+        uses: mikepenz/action-junit-report@v6
+        with:
+          report_paths: platform/build/test-results/testUnit/*.xml
+          check_name: Unit tests
+          annotate_only: true
+          detailed_summary: true
+          include_time_in_summary: true
+
+      - name: Upload unit test coverage data
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: jacoco-exec-unit
+          path: platform/build/jacoco/testUnit.exec
+          if-no-files-found: warn
+
+  test-integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-platform
+
+      - name: Run integration tests
+        run: ./gradlew testIntegration --no-daemon
+
+      - name: Publish integration test report
+        if: ${{ !cancelled() }}
+        uses: mikepenz/action-junit-report@v6
+        with:
+          report_paths: platform/build/test-results/testIntegration/*.xml
+          check_name: Integration tests
+          annotate_only: true
+          detailed_summary: true
+          include_time_in_summary: true
+
+      - name: Upload integration test coverage data
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: jacoco-exec-integration
+          path: platform/build/jacoco/testIntegration.exec
+          if-no-files-found: warn
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: platform
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  coverage-report:
+    name: Coverage report
+    needs: [ test-unit, test-integration ]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-platform
+
+      - name: Download coverage data
+        uses: actions/download-artifact@v8
+        with:
+          pattern: jacoco-exec-*
+          path: platform/build/jacoco
+          merge-multiple: true
+
+      - name: Generate combined coverage report
+        run: >-
+          ./gradlew jacocoTestReport --no-daemon
+          -x testUnit -x testIntegration
+
+      - name: Publish coverage report
+        uses: madrapps/jacoco-report@v1.8.0
+        with:
+          paths: platform/build/reports/jacoco/test/jacocoTestReport.xml
+          token: ${{ github.token }}
+          title: Coverage
+          comment-type: summary
+          continue-on-error: false
