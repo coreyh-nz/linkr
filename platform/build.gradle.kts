@@ -10,6 +10,9 @@ plugins {
     // testing
     alias(libs.plugins.kotest)
     jacoco
+
+    // linting
+    alias(libs.plugins.ktlint)
 }
 
 group = "nz.coreyh"
@@ -36,6 +39,23 @@ kotlin {
 repositories {
     mavenCentral()
 }
+
+// linting
+ktlint {
+    version = libs.versions.ktlint.cli
+}
+
+// ktlint embeds the kotlin compiler, so it must run with the kotlin version it was built against
+// rather than the one the spring boot bom aligns every configuration to
+configurations
+    .matching { it.name.startsWith("ktlint") }
+    .configureEach {
+        resolutionStrategy.eachDependency {
+            if (requested.group == "org.jetbrains.kotlin") {
+                requested.version?.let { useVersion(it) }
+            }
+        }
+    }
 
 // test suites
 data class TestSuite(

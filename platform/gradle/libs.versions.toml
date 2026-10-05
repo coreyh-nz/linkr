@@ -16,6 +16,10 @@ mockk = "1.14.11"
 spring-mockk = "5.0.1"
 test-containers = "2.0.5"
 
+# linting
+ktlint = "14.2.0"
+ktlint-cli = "1.8.0"
+
 [libraries]
 # spring
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
@@ -51,3 +55,6 @@ spring-dependency-management = { id = "io.spring.dependency-management", version
 
 # testing
 kotest = { id = "io.kotest", version.ref = "kotest" }
+
+# linting
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
