@@ -1,0 +1,14 @@
+services:
+  platform:
+    build: ./platform
+    ports:
+      - '8080:8080'
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    ports:
+      - '3000:3000'
+    depends_on:
+      - platform
+    restart: unless-stopped
