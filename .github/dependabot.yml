@@ -17,10 +17,6 @@ updates:
       - /web
     schedule:
       interval: weekly
-    groups:
-      docker:
-        patterns:
-          - '*'
 
   - package-ecosystem: npm
     directory: /web
