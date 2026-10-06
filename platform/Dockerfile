@@ -1,7 +1,7 @@
 FROM eclipse-temurin:26-jdk AS build
 WORKDIR /app
 
-COPY gradlew settings.gradle.kts build.gradle.kts ./
+COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY gradle ./gradle
 RUN ./gradlew --no-daemon dependencies > /dev/null 2>&1
 
