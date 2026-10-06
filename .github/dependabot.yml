@@ -12,10 +12,27 @@ updates:
       interval: weekly
 
   - package-ecosystem: docker
-    directory: /platform
+    directories:
+      - /platform
+      - /web
     schedule:
       interval: weekly
     groups:
       docker:
         patterns:
           - '*'
+
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    groups:
+      npm-minor-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # pinned to 6.x until typescript-eslint supports TS 7
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
