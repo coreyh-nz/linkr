@@ -8,7 +8,7 @@ spring-boot = "4.1.1"
 spring-dependency-management = "1.1.7"
 
 # logging
-kotlin-logging = "8.0.4"
+kotlin-logging = "8.0.6"
 
 # testing
 kotest = "6.2.5"
